@@ -440,10 +440,11 @@ static char *url_append(const char *url, const char *sublink)
         fprintf(stderr, "url_append(): calloc failure!\n");
         exit(EXIT_FAILURE);
     }
-    strncpy(str, url, ul);
+    memcpy(str, url, ul);
     if (needs_separator) {
         str[ul] = '/';
     }
-    strncat(str, sublink, sl);
+    memcpy(str + ul + needs_separator, sublink, sl);
+    str[ul + needs_separator + sl] = '\0';
     return str;
 }
