@@ -1,7 +1,9 @@
 VERSION=1.0.2
 
-CFLAGS+= -g -O2 -Wall -Wextra -D_FILE_OFFSET_BITS=64 -DVERSION=\"$(VERSION)\"
-LDFLAGS+= -lgumbo -lcurl -lfuse -lcrypto
+CFLAGS = -g -O2 -Wall -Wextra
+
+CADD  = `pkg-config --cflags fuse gumbo libcurl` -DVERSION=\"$(VERSION)\"
+LDADD = `pkg-config --libs fuse gumbo libcurl`
 COBJS = main.o network.o fuse_local.o link.o
 
 prefix ?= /usr/local
@@ -9,10 +11,10 @@ prefix ?= /usr/local
 all: httpdirfs
 
 %.o: src/%.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -c -o $@ $<
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $(CADD) -o $@ $<
 
 httpdirfs: $(COBJS)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LDADD) -o $@ $^
 
 install:
 	install -m 755 -D httpdirfs \
