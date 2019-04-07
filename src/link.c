@@ -275,7 +275,7 @@ static void LinkTable_print(LinkTable *linktbl)
     fprintf(stderr, "--------------------------------------------\n");
     for (int i = 0; i < linktbl->num; i++) {
         Link *this_link = linktbl->links[i];
-        fprintf(stderr, "%d %c %lu %s %s\n",
+        fprintf(stderr, "%d %c %zu %s %s\n",
                 i,
                 this_link->type,
                 this_link->content_length,
@@ -365,7 +365,7 @@ long path_download(const char *path, char *output_buf, size_t size,
     size_t start = offset;
     size_t end = start + size;
     char range_str[64];
-    snprintf(range_str, sizeof(range_str), "%lu-%lu", start, end);
+    snprintf(range_str, sizeof(range_str), "%zu-%zu", start, end);
 
     MemoryStruct buf;
     buf.size = 0;
