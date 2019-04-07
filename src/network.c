@@ -1,7 +1,5 @@
 #include "network.h"
 
-#include <openssl/crypto.h>
-
 #include <errno.h>
 #include <pthread.h>
 #include <string.h>
@@ -17,48 +15,18 @@ NetworkConfigStruct NETWORK_CONFIG;
 static CURLM *curl_multi;
 /** \brief  mutex for transfer functions */
 static pthread_mutex_t transfer_lock;
-/** \brief the lock array for cryptographic functions */
-static pthread_mutex_t *crypto_lockarray;
 /** \brief mutex for curl share interface itself */
 static pthread_mutex_t curl_lock;
 /** \brief network configuration */
 
 /* ---------------- Static function prototype ---------------*/
-static void crypto_lock_callback(int mode, int type, char *file, int line);
-static void crypto_lock_init(void);
 static void curl_callback_lock(CURL *handle, curl_lock_data data,
                                curl_lock_access access, void *userptr);
 static void curl_callback_unlock(CURL *handle, curl_lock_data data,
                                  void *userptr);
 void curl_process_msgs(CURLMsg *curl_msg, int n_running_curl, int n_mesgs);
-static unsigned long thread_id(void);
 
 /* -------------------- Functions -------------------------- */
-static void crypto_lock_callback(int mode, int type, char *file, int line)
-{
-    (void)file;
-    (void)line;
-    if(mode & CRYPTO_LOCK) {
-        pthread_mutex_lock(&(crypto_lockarray[type]));
-    } else {
-        pthread_mutex_unlock(&(crypto_lockarray[type]));
-    }
-}
-
-static void crypto_lock_init(void)
-{
-    int i;
-
-    crypto_lockarray = (pthread_mutex_t *)OPENSSL_malloc(CRYPTO_num_locks() *
-                       sizeof(pthread_mutex_t));
-    for(i = 0; i<CRYPTO_num_locks(); i++) {
-        pthread_mutex_init(&(crypto_lockarray[i]), NULL);
-    }
-
-    CRYPTO_set_id_callback((unsigned long (*)())thread_id);
-    CRYPTO_set_locking_callback((void (*)())crypto_lock_callback);
-}
-
 /**
  * Adapted from:
  * https://curl.haxx.se/libcurl/c/10-at-a-time.html
@@ -242,12 +210,6 @@ LinkTable *network_init(const char *url)
         exit(EXIT_FAILURE);
     }
 
-    /*
-     * cryptographic lock functions were shamelessly copied from
-     * https://curl.haxx.se/libcurl/c/threaded-ssl.html
-     */
-    crypto_lock_init();
-
     /* --------- Print off SSL engine version stream --------- */
     curl_version_info_data *data = curl_version_info(CURLVERSION_NOW);
     printf("libcurl SSL engine: %s\n", data->ssl_version);
@@ -295,14 +257,6 @@ void transfer_nonblocking(CURL *curl)
                 res, curl_multi_strerror(res));
         exit(EXIT_FAILURE);
     }
-}
-
-static unsigned long thread_id(void)
-{
-    unsigned long ret;
-
-    ret = (unsigned long)pthread_self();
-    return ret;
 }
 
 size_t
